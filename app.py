@@ -1,15 +1,20 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 import os
 import pdfplumber
 from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# ---------------- MongoDB Connection ----------------
+# ---------------- MongoDB Connection (SAFE) ----------------
 MONGO_URI = os.environ.get("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client["resume_analyzer"]
-collection = db["results"]
+
+if MONGO_URI:
+    client = MongoClient(MONGO_URI)
+    db = client["resume_analyzer"]
+    collection = db["results"]
+else:
+    collection = None
+    print("⚠️ MongoDB not connected (MONGO_URI missing)")
 
 # ---------------- Upload Folder ----------------
 UPLOAD_FOLDER = "uploads"
@@ -73,13 +78,26 @@ def calculate_ats_score(skills):
 
     return min(score, 100)
 
-# ---------------- Main Route ----------------
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    skills = []
-    jobs = []
-    ats_score = 0
+# ---------------- ROUTES ----------------
 
+# Home Page
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+# Login Page
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+# Signup Page
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+# Upload Page
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
     if request.method == 'POST':
         file = request.files['resume']
 
@@ -87,7 +105,7 @@ def home():
             file_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(file_path)
 
-            # Extract text from PDF
+            # Extract text
             text = ""
             if file.filename.endswith('.pdf'):
                 with pdfplumber.open(file_path) as pdf:
@@ -96,27 +114,48 @@ def home():
                         if extracted:
                             text += extracted
 
-            # Process data
+            # Process
             skills = extract_skills(text)
             jobs = recommend_jobs(skills)
             ats_score = calculate_ats_score(skills)
 
             # Save to MongoDB
-            data = {
-                "skills": skills,
-                "jobs": jobs,
-                "ats_score": ats_score
-            }
-            collection.insert_one(data)
+            if collection:
+                collection.insert_one({
+                    "skills": skills,
+                    "jobs": jobs,
+                    "ats_score": ats_score
+                })
 
-    return render_template(
-        'index.html',
-        skills=', '.join(skills),
-        jobs=', '.join(jobs) if jobs else "No matching jobs found",
-        score=ats_score
-    )
+            return render_template(
+                'result.html',
+                skills=', '.join(skills),
+                jobs=', '.join(jobs) if jobs else "No matching jobs found",
+                score=ats_score
+            )
 
-# ---------------- Run App (FOR RENDER) ----------------
+    return render_template('upload.html')
+
+# About Page
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+# Contact Page
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+# Admin Page (optional)
+@app.route('/admin')
+def admin():
+    if collection:
+        data = list(collection.find())
+    else:
+        data = []
+    return render_template('admin.html', data=data)
+
+# ---------------- Run App (Render Ready) ----------------
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
