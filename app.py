@@ -6,7 +6,8 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 # ---------------- MongoDB Connection ----------------
-client = MongoClient("YOUR_CONNECTION_STRING")
+MONGO_URI = os.environ.get("MONGO_URI")
+client = MongoClient(MONGO_URI)
 db = client["resume_analyzer"]
 collection = db["results"]
 
@@ -115,6 +116,7 @@ def home():
         score=ats_score
     )
 
-# ---------------- Run App ----------------
+# ---------------- Run App (FOR RENDER) ----------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
