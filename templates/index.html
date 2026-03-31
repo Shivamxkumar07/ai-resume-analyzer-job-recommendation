@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume Analyzer</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            text-align: center;
+            padding: 50px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 450px;
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        input[type="file"] {
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #007bff;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .box {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>AI Resume Analyzer</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="resume" required><br>
+        <button type="submit">Upload Resume</button>
+    </form>
+
+    {% if skills %}
+    <div class="result">
+        <h3>🧠 Extracted Skills:</h3>
+        <div class="box">{{ skills }}</div>
+    </div>
+    {% endif %}
+
+    {% if jobs %}
+    <div class="result">
+        <h3>💼 Recommended Jobs:</h3>
+        <div class="box">{{ jobs }}</div>
+    </div>
+    {% endif %}
+
+    {% if score %}
+    <div class="result">
+        <h3>📊 ATS Score:</h3>
+        <div class="box score">{{ score }} / 100</div>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
